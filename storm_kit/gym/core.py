@@ -32,7 +32,8 @@ from quaternion import from_rotation_matrix
 from .helpers import load_struct_from_dict
 
 class Gym(object):
-    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
+    def __init__(self, sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1,
+                 headless=False, cam_pos=None, cam_target=None, **kwargs):
 
         if(physics_engine=='physx'):
             physics_engine = gymapi.SIM_PHYSX
@@ -40,7 +41,13 @@ class Gym(object):
             physics_engine = gymapi.SIM_FLEX
         # create physics engine struct
         sim_engine_params = gymapi.SimParams()
-        
+
+        if cam_pos is None:
+             cam_pos = np.array([-1.5, 1.8, 1.2])
+
+        if cam_target is None:
+            cam_target = np.array([6, 0., -6])
+
         # find params in kwargs and fill up here:
         sim_engine_params = load_struct_from_dict(sim_engine_params, sim_params)
         self.headless = headless
@@ -51,19 +58,17 @@ class Gym(object):
                                        physics_engine,
                                        sim_engine_params)
 
-        self.env_list = []#None
+        self.env_list = []
         self.viewer = None
         self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
         if(not headless):
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
-            cam_pos = gymapi.Vec3(-1.5, 1.8, 1.2)
-            cam_target = gymapi.Vec3(6, 0.0, -6)
-            #cam_pos = gymapi.Vec3(2, 2.0, -2)
-            #cam_target = gymapi.Vec3(-6, 0.0,6)
+            cam_pos = gymapi.Vec3(cam_pos[0], cam_pos[1], cam_pos[2])
+            cam_target = gymapi.Vec3(cam_target[0], cam_target[1], cam_target[2])
             self.gym.viewer_camera_look_at(self.viewer, None, cam_pos, cam_target)
         #self.gym.add_ground(self.sim, gymapi.PlaneParams())
-
         self.dt = sim_engine_params.dt
+
     def step(self):
         
         ## step through the physics regardless, only apply torque when sim time matches the real time

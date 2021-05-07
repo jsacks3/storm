@@ -65,14 +65,17 @@ def pose_from_gym(gym_pose):
     return pose
 
 class RobotSim():
-    def __init__(self, device='cpu', gym_instance=None, sim_instance=None,
+    def __init__(self, device='cpu', gym_instance=None,
                  asset_root='', sim_urdf='', asset_options='', init_state=None, collision_model=None, **kwargs):
-        self.gym = gym_instance
-        self.sim = sim_instance
+        self.gym = gym_instance.gym
+        self.sim = gym_instance.sim
+        self.gym_instance = gym_instance
         self.device = device
         self.dof = None
         self.init_state = init_state
         self.joint_names = []
+        self.robot_ptrs = []
+
         robot_asset_options = gymapi.AssetOptions()
         robot_asset_options = load_struct_from_dict(robot_asset_options, asset_options)
 
@@ -86,7 +89,6 @@ class RobotSim():
                                                  robot_asset_options,
                                                  asset_root)
 
-        
     def init_sim(self, gym_instance, sim_instance):
         self.gym = gym_instance
         self.sim = sim_instance
@@ -100,7 +102,17 @@ class RobotSim():
         #print(asset_options.disable_gravity)
         return robot_asset
 
-    def spawn_robot(self, env_handle, robot_pose, robot_asset=None, coll_id=-1, init_state=None):
+    def spawn_robots(self):
+        for i, env_ptr in enumerate(self.gym_instance.env_list):
+            robot_ptr = self.spawn_robot(env_ptr, self.init_state, coll_id=i)
+            self.robot_ptrs.append(robot_ptr)
+        self.gym.prepare_sim(self.sim)
+        return self.robot_ptrs
+
+    def spawn_robot(self, env_handle, robot_pose=None, robot_asset=None, coll_id=-1, init_state=None):
+        if robot_pose is None:
+            robot_pose = self.init_state
+
         p = gymapi.Vec3(robot_pose[0], robot_pose[1], robot_pose[2])
         robot_pose = gymapi.Transform(p=p, r=gymapi.Quat(robot_pose[3], robot_pose[4], robot_pose[5], robot_pose[6]))
         self.spawn_robot_pose = robot_pose
@@ -138,21 +150,8 @@ class RobotSim():
                 init_state = self.init_state
         self.init_state = init_state
 
-        # for torque control:
-        #robot_dof_props['driveMode'].fill(gymapi.DOF_MODE_EFFORT)
-        #robot_dof_props['stiffness'].fill(0.0) # = self.joint_stiffnness[:self.num_dofs]
-        #robot_dof_props['damping'].fill(1.0) # To avoidxb oscilaatuions?
+        self._set_dof_properties(env_handle, robot_handle, robot_dof_props)
 
-        # for position control:
-        robot_dof_props['driveMode'].fill(gymapi.DOF_MODE_POS)
-        robot_dof_props['stiffness'].fill(400.0) # = self.joint_stiffnness[:self.num_dofs]
-        robot_dof_props['damping'].fill(40.0) # To avoidxb oscilaatuions?
-        robot_dof_props['stiffness'][-2:] = 100.0
-        robot_dof_props['damping'][-2:] = 5.0
-        
-
-        self.gym.set_actor_dof_properties(env_handle, robot_handle, robot_dof_props)            
-        
         robot_dof_states = copy.deepcopy(self.gym.get_actor_dof_states(env_handle, robot_handle,
                                                                        gymapi.STATE_ALL))
 
@@ -166,6 +165,23 @@ class RobotSim():
             self.init_collision_model(self.collision_model_params, env_handle, robot_handle)
 
         return robot_handle
+
+    def _set_dof_properties(self, env_handle, robot_handle, robot_dof_props):
+        # for torque control:
+
+        # robot_dof_props['driveMode'].fill(gymapi.DOF_MODE_EFFORT)
+        # robot_dof_props['stiffness'].fill(0.0) # = self.joint_stiffnness[:self.num_dofs]
+        # robot_dof_props['damping'].fill(1.0) # To avoidxb oscilaatuions?
+
+        # for position control:
+        robot_dof_props['driveMode'].fill(gymapi.DOF_MODE_POS)
+        robot_dof_props['stiffness'].fill(400.0)  # = self.joint_stiffnness[:self.num_dofs]
+        robot_dof_props['damping'].fill(40.0)  # To avoidxb oscilaatuions?
+        robot_dof_props['stiffness'][-2:] = 100.0
+        robot_dof_props['damping'][-2:] = 5.0
+
+        self.gym.set_actor_dof_properties(env_handle, robot_handle, robot_dof_props)
+
     def get_state(self, env_handle, robot_handle):
         robot_state = self.gym.get_actor_dof_states(env_handle, robot_handle, gymapi.STATE_ALL)
         
@@ -180,7 +196,6 @@ class RobotSim():
         joint_state['acceleration'] = np.ravel(joint_state['velocity'])*0.0
         
         return joint_state
-    
 
     def command_robot(self, tau, env_handle, robot_handle):
         self.gym.apply_actor_dof_efforts(env_handle, robot_handle, np.float32(tau))
@@ -297,8 +312,6 @@ class RobotSim():
         
         return camera_handle
 
-        
-        
     def observe_camera(self, env_ptr):
         self.gym.render_all_camera_sensors(self.sim)
         self.current_env_observations = []

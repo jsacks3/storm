@@ -1,0 +1,38 @@
+use_cuda: True
+cuda_device_num: 0
+
+control_dt: 0.01
+run_open_loop: False
+float_dtype: 'float32'
+state_filter_coeff: {'position':0.1, 'velocity':0.0, 'acceleration':1.0}
+cmd_filter_coeff: {'position':1.0, 'velocity':1.0, 'acceleration':1.0}
+
+model:
+  max_torque: 4.
+
+mppi:
+  horizon           : 32
+  init_cov          : 0.1
+  gamma             : 1.0
+  n_iters           : 1
+  step_size_mean    : 0.9
+  step_size_cov     : 0.9
+  beta              : 1.0
+  alpha             : 1
+  num_particles     : 32
+  update_cov        : False
+  cov_type          : 'sigma_I' #
+  kappa             : 0.005
+  null_act_frac     : 0.01
+  sample_mode       : 'mean'
+  base_action       : 'repeat'
+  squash_fn         : 'clamp'
+  hotstart          : True
+  visual_traj       : 'state_seq'
+  sample_params:
+    type: 'multiple'
+    fixed_samples: True
+    sample_ratio: {'halton':0.0, 'halton-knot':1.0, 'random':0.0, 'random-knot':0.0}
+    seed: 0
+    filter_coeffs: None #[0.3, 0.3, 0.4]
+    knot_scale: 4

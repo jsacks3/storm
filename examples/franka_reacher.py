@@ -87,7 +87,7 @@ def mpc_robot_interactive(args, gym_instance):
 
     sim_params['collision_model'] = None
     # create robot simulation:
-    robot_sim = RobotSim(gym_instance=gym, sim_instance=sim, **sim_params, device=device)
+    robot_sim = RobotSim(gym_instance=gym_instance, **sim_params, device=device)
 
     
     # create gym environment:
