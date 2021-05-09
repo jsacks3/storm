@@ -178,24 +178,20 @@ class OLGaussianMPC(Controller):
             # delta: N * H * A -> N * HA
             delta = delta.view(delta.shape[0], self.horizon * self.d_action)
 
-            
+
         scaled_delta = torch.matmul(delta, self.full_scale_tril).view(delta.shape[0],
                                                                       self.horizon,
                                                                       self.d_action)
 
-
-
-        #
         debug_act = delta[:,:,0].cpu().numpy()
 
         act_seq = self.mean_action.unsqueeze(0) + scaled_delta
-        
 
         act_seq = scale_ctrl(act_seq, self.action_lows, self.action_highs, squash_fn=self.squash_fn)
-        
+
 
         append_acts = self.best_traj.unsqueeze(0)
-        
+
         #append zero actions (for stopping)
         if self.num_null_particles > 0:
             # zero particles:
@@ -205,7 +201,7 @@ class OLGaussianMPC(Controller):
             neg_act_seqs = neg_action.expand(self.num_neg_particles,-1,-1)
             append_acts = torch.cat((append_acts, self.null_act_seqs, neg_act_seqs),dim=0)
 
-        
+
         act_seq = torch.cat((act_seq, append_acts), dim=0)
         return act_seq
 
@@ -221,11 +217,13 @@ class OLGaussianMPC(Controller):
                 Initial state to set the simulation env to
          """
         
-        act_seq = self.sample_actions(state=state) # sample noise from covariance of current control distribution
-
-
-
-        trajectories = self._rollout_fn(state, act_seq)
+        if isinstance(state, torch.Tensor):
+            act_seq = self.sample_actions(state=state)  # sample noise from covariance of current control distribution
+            trajectories = self._rollout_fn(state, act_seq)
+        else:
+            act_seq = self.sample_actions(state=state)
+            delta = act_seq - self.mean_action.unsqueeze(0)
+            trajectories = self._rollout_fn(state, self.mean_action, delta)
         return trajectories
     
     def _shift(self, shift_steps=1):

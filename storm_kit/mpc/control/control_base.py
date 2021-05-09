@@ -227,9 +227,13 @@ class Controller(ABC):
 
         n_iters = n_iters if n_iters is not None else self.n_iters
         # get input device:
-        inp_device = state.device
-        inp_dtype = state.dtype
-        state.to(**self.tensor_args)
+        if isinstance(state, torch.Tensor):
+            inp_device = state.device
+            inp_dtype = state.dtype
+            state.to(**self.tensor_args)
+        else:
+            inp_device = 'cpu'
+            inp_dtype = torch.float32
 
         info = dict(rollout_time=0.0, entropy=[])
         # shift distribution to hotstart from previous timestep
