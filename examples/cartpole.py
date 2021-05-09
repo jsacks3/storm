@@ -11,7 +11,7 @@ from mjmpc.envs import GymEnvWrapper
 
 from storm_kit.mpc.model.mj_model import MJModel
 from storm_kit.util_file import get_gym_configs_path, load_yaml, join_path, get_mpc_configs_path
-from storm_kit.mpc.task.mj_task import MJTask
+from storm_kit.mpc.task.cartpole_task import CartpoleTask
 
 def mpc_cartpole(args):
     device = 'cuda' if args.cuda else 'cpu'
@@ -27,7 +27,7 @@ def mpc_cartpole(args):
     env.real_env_step(True)
 
     # Create the simulation model
-    mpc_controller = MJTask(task_file=task_file, tensor_args=tensor_args)
+    mpc_controller = CartpoleTask(task_file=task_file, tensor_args=tensor_args)
 
     while True:
         curr_state = copy.deepcopy(env.get_env_state())
