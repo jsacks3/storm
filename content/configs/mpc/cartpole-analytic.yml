@@ -1,0 +1,30 @@
+model:
+  env_name  : 'cartpole-v0'
+  seed      : 123
+
+mppi:
+  horizon           : 64
+  init_cov          : 0.1
+  gamma             : 1.0
+  n_iters           : 1
+  step_size_mean    : 0.9
+  step_size_cov     : 0.9
+  beta              : 1.0
+  alpha             : 1
+  num_particles     : 128
+  update_cov        : False
+  cov_type          : 'sigma_I'
+  kappa             : 0.0001
+  null_act_frac     : 0.01
+  sample_mode       : 'mean'
+  base_action       : 'null'
+  squash_fn         : 'identity'
+  hotstart          : True
+  visual_traj       : 'state_seq'
+  sample_params:
+    type: 'multiple'
+    fixed_samples: True
+    sample_ratio: {'halton':0.0, 'halton-knot':1.0, 'random':0.0, 'random-knot':0.0}
+    seed: 0
+    filter_coeffs: None
+    knot_scale: 5
