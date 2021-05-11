@@ -32,12 +32,14 @@ from quaternion import from_rotation_matrix
 from .helpers import load_struct_from_dict
 
 class Gym(object):
-    def __init__(self,sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1, headless=False, **kwargs):
+    def __init__(self, sim_params={}, physics_engine='physx', compute_device_id=0, graphics_device_id=1, num_envs=1,
+                 headless=False, create_env=True, **kwargs):
 
         if(physics_engine=='physx'):
             physics_engine = gymapi.SIM_PHYSX
         elif(physics_engine == 'flex'):
             physics_engine = gymapi.SIM_FLEX
+
         # create physics engine struct
         sim_engine_params = gymapi.SimParams()
         
@@ -52,8 +54,11 @@ class Gym(object):
                                        sim_engine_params)
 
         self.env_list = []#None
+        self.num_envs = num_envs
         self.viewer = None
-        self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
+
+        if create_env:
+            self._create_envs(num_envs, num_per_row=int(np.sqrt(num_envs)))
         if(not headless):
             self.viewer = self.gym.create_viewer(self.sim, gymapi.CameraProperties())
             cam_pos = gymapi.Vec3(-1.5, 1.8, 1.2)
