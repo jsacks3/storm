@@ -3,12 +3,6 @@ import numpy as np
 import torch
 import gym
 
-import mj_envs
-import mjmpc.envs
-from mjmpc.envs import GymEnvWrapper
-from mjmpc.envs.vec_env import SubprocVecEnv
-from mjmpc.utils import helpers
-
 class CartpoleModel(DynamicsModelBase):
     def __init__(self, tensor_args={'device':'cpu','dtype':torch.float32}):
         super(CartpoleModel, self).__init__()

@@ -4,6 +4,8 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
+def angle_normalize(x):
+    return (((x+np.pi) % (2*np.pi)) - np.pi)
 
 class CartPoleEnv(gym.Env):
 
@@ -22,6 +24,10 @@ class CartPoleEnv(gym.Env):
         self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = 'euler'
+
+        self.d_obs = 4
+        self.d_action = 1
+        self.d_state = 4
 
         # Angle at which to fail the episode
         self.theta_threshold_radians = 12 * 2 * math.pi / 360
@@ -71,7 +77,7 @@ class CartPoleEnv(gym.Env):
             theta_dot = theta_dot + self.tau * thetaacc
             theta = theta + self.tau * theta_dot
 
-        self.state = x, x_dot, theta, theta_dot
+        self.state = np.array([x, x_dot, theta, theta_dot])
 
         done = bool(
             x < -self.x_threshold
@@ -97,7 +103,7 @@ class CartPoleEnv(gym.Env):
             self.steps_beyond_done += 1
             reward = 0.0
 
-        return np.array(self.state), reward, done, {}
+        return np.array(self.state), reward, done, self.get_env_infos()
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
@@ -163,3 +169,23 @@ class CartPoleEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def get_env_state(self):
+        return self.state
+
+    def set_env_state(self, state):
+        self.state = state
+
+    def get_env_infos(self):
+        goal_achieved = np.abs(angle_normalize(self.state[2])) < 0.1 and np.abs(self.state[3]) < 0.1
+        return dict(state=self.get_env_state(), goal_achieved=goal_achieved)
+
+    def evaluate_success(self, paths):
+        num_success = 0
+        num_paths = len(paths)
+        # success if upright and centered for atleast 5 steps
+        for path in paths:
+            if np.sum(path['env_infos']['goal_achieved']) > 5:
+                num_success += 1
+        success_percentage = num_success * 100.0 / num_paths
+        return success_percentage

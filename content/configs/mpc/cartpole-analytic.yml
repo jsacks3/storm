@@ -1,9 +1,9 @@
-model:
-  env_name  : 'cartpole-v0'
-  seed      : 123
+n_episodes        : 1
+max_ep_length     : 100
+seed              : 123
 
 mppi:
-  horizon           : 64
+  horizon           : 32
   init_cov          : 0.1
   gamma             : 1.0
   n_iters           : 1

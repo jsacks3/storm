@@ -23,7 +23,8 @@ def mpc_cartpole(args):
     env.reset()
 
     # Create the simulation model
-    mpc_controller = CartpoleAnalyticTask(task_file=task_file, tensor_args=tensor_args)
+    mpc_controller = CartpoleAnalyticTask(task_file=task_file, config_root=get_mpc_configs_path(),
+                                          tensor_args=tensor_args)
 
     while True:
         curr_state = torch.tensor(copy.deepcopy(env.state), **tensor_args)
