@@ -66,7 +66,7 @@ def mpc_robot_interactive(args, gym_instance):
     vis_ee_target = True
     robot_file = args.robot + '.yml'
     task_file = args.robot + '_reacher.yml'
-    world_file = 'collision_primitives_3d.yml'
+    world_file = 'collision_table.yml'
 
     
     gym = gym_instance.gym
@@ -254,9 +254,9 @@ def mpc_robot_interactive(args, gym_instance):
             t_step += sim_dt
             
             current_robot_state = copy.deepcopy(robot_sim.get_state(env_ptr, robot_ptr))
-            
 
-            
+
+
             command = mpc_control.get_command(t_step, current_robot_state, control_dt=sim_dt, WAIT=False)
 
             filtered_state_mpc = current_robot_state #mpc_control.current_state
@@ -271,7 +271,7 @@ def mpc_robot_interactive(args, gym_instance):
             ee_error = mpc_control.get_current_error(filtered_state_mpc)
              
             pose_state = mpc_control.controller.rollout_fn.get_ee_pose(curr_state_tensor)
-            
+
             # get current pose:
             e_pos = np.ravel(pose_state['ee_pos_seq'].cpu().numpy())
             e_quat = np.ravel(pose_state['ee_quat_seq'].cpu().numpy())
