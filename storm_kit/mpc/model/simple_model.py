@@ -23,7 +23,6 @@
 
 #
 import matplotlib
-matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 import torch
 from typing import List, Tuple, Dict, Optional, Any
